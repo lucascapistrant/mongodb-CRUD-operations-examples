@@ -1,7 +1,6 @@
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
-// It is best practice to store the connection string in an environment variable and refrence it here, but
-// for these examples it is fine to directly paste it at uri.
-const uri = "mongodb+srv://admin:capis_admin11@cluster0.riulm1d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+// It is best practice to store the connection string in an environment variable and refrence it here
+const uri = process.env.URI;
 const dbName = 'sample_restaurants';
 const collectionName = 'restaurants';
 
@@ -14,21 +13,20 @@ const client = new MongoClient(uri, {
 });
 
 // Each of the following functions open and close connections, which is not efficient for performing multible operations.
-// Each of the functions is just used to show how these operatons could be made for learning.
+// Each of the functions is just used to show how these operatons could be made for learning purposes.
 async function testDbConnection() {
   try {
     await client.connect();
     console.log(`Successfully connected to the ${dbName} database!`);
     return true;
   } catch(err) {
-    console.error(`Database connection not succefull.`, err);
+    console.error(`Database connection not successfull.`, err);
     throw err;
   } finally {
     await client.close();
   }
 }
 
-// find functions do not account for projection or limit
 async function findSingleDocument(documentQuery, projection = null) {
   try {
     await client.connect();
@@ -186,43 +184,6 @@ async function deleteDocuments(documentQuery) {
   }
 }
 
-// Transactions
-
-async function runTransaction() {
-  // Start a session.
-  const session = client.startSession();
-
-  try {
-    // Begin transaction.
-    await session.withTransaction(async () => {
-      const collection = client.db(dbName).collection(collectionName);
-
-      // Example operations.
-      // It could be possible to use already established functions above, like updateSingleDocument and
-      // deleteSingleDocument, but in order to do that I would need to modify those functions slightly to accept
-      //  a session as an additional parameter and include the session in the operations, which I avoided to keep
-      // example simplicity.
-      await collection.updateOne(
-        { _id: new ObjectId('5eb3d668b31de5d588f4292e') },
-        { $set: { name: "New Restaurant Name" } },
-        { session }
-      );
-
-      await collection.deleteOne(
-        { _id: new ObjectId('5eb3d668b31de5d588f42930') },
-        { session }
-      );
-
-      console.log("Transaction successfully committed.");
-    });
-  } catch (err) {
-    console.error("Transaction aborted due to an error: ", err);
-  } finally {
-    await session.endSession();
-    await client.close();
-  }
-}
-
 const newdocument1 = {
   address: {},
   borough: "Maple Grove",
@@ -237,4 +198,5 @@ const newdocument2 = {
   grades: {},
   name: "New Restaurant Name 2"
 }
-insertDocuments([newdocument1, newdocument2]);
+// example on how these functions could be used.
+findSingleDocument([newdocument1, newdocument2]);
